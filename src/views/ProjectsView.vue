@@ -85,14 +85,14 @@
 
     <div v-if="projectsStore.loading">Загрузка...</div>
     <div v-else>
-      <ProjectCard
-        v-for="project in projectsStore.projects"
-        :key="project.id"
-        :project="project"
-        @open="goToProject(project.id)"
-        @edit="editProject(project.id)"
-        @delete="deleteProject(project.id)"
-      />
+      <div v-for="project in projectsStore.projects" :key="project.id" class="project-row">
+        <ProjectCard :project="project" @click="goToProject(project.id)" />
+        <div class="project-row-actions">
+          <button @click="goToProject(project.id)">Детали</button>
+          <button @click="editProject(project.id)">Редактировать</button>
+          <button class="danger" @click="deleteProject(project.id)">Удалить</button>
+        </div>
+      </div>
     </div>
 
     <ProjectWizard v-if="openWizard" @close="openWizard = false" @saved="refreshProjects" />
@@ -171,4 +171,8 @@ onMounted(() => {
 .filters-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1rem; }
 label { display: flex; flex-direction: column; gap: 0.25rem; }
 .filters-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+.project-row { display: flex; gap: 0.75rem; align-items: flex-start; margin-bottom: 1rem; }
+.project-row :deep(.project-card) { flex: 1; margin-bottom: 0; }
+.project-row-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.danger { color: #b00020; }
 </style>
