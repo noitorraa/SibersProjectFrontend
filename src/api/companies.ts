@@ -2,7 +2,18 @@ import apiClient from "./client";
 import type { Company } from "@/types";
 
 type ApiCompany = Partial<Company> & { Id?: number; Name?: string };
-type CompaniesResponse = ApiCompany[] | { items?: ApiCompany[]; data?: ApiCompany[]; results?: ApiCompany[]; Items?: ApiCompany[]; Data?: ApiCompany[]; Results?: ApiCompany[] };
+type CompaniesEnvelope = {
+  items?: ApiCompany[];
+  data?: ApiCompany[];
+  results?: ApiCompany[];
+  Items?: ApiCompany[];
+  Data?: ApiCompany[];
+  Results?: ApiCompany[];
+  $values?: ApiCompany[];
+  value?: ApiCompany[];
+  Value?: ApiCompany[];
+};
+type CompaniesResponse = ApiCompany[] | CompaniesEnvelope;
 
 const mapCompany = (company: ApiCompany): Company => ({
   id: company.id ?? company.Id ?? 0,
@@ -11,7 +22,7 @@ const mapCompany = (company: ApiCompany): Company => ({
 
 const extractCompanies = (payload: CompaniesResponse): ApiCompany[] => {
   if (Array.isArray(payload)) return payload;
-  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? (payload as any).$values ?? (payload as any).value ?? (payload as any).Value ?? [];
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? payload.$values ?? payload.value ?? payload.Value ?? [];
 };
 
 export const getCompanies = async () => {

@@ -87,32 +87,44 @@ const mapProject = (project: ApiProject): Project => ({
   documents: project.documents ?? project.Documents,
 });
 
-type ProjectsListResponse =
-  | ApiProject[]
-  | {
-      items?: ApiProject[];
-      Items?: ApiProject[];
-      data?: ApiProject[];
-      Data?: ApiProject[];
-      results?: ApiProject[];
-      Results?: ApiProject[];
-    };
+type ProjectsListEnvelope = {
+  items?: ApiProject[];
+  Items?: ApiProject[];
+  data?: ApiProject[];
+  Data?: ApiProject[];
+  results?: ApiProject[];
+  Results?: ApiProject[];
+  $values?: ApiProject[];
+  value?: ApiProject[];
+  Value?: ApiProject[];
+};
+type ProjectsListResponse = ApiProject[] | ProjectsListEnvelope;
+
+type ProjectSingleEnvelope = {
+  project?: ApiProject;
+  Project?: ApiProject;
+  item?: ApiProject;
+  Item?: ApiProject;
+  data?: ApiProject;
+  Data?: ApiProject;
+  value?: ApiProject;
+  Value?: ApiProject;
+};
 
 const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
   if (Array.isArray(payload)) return payload;
 
-  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? (payload as any).$values ?? (payload as any).value ?? (payload as any).Value ?? [];
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? payload.$values ?? payload.value ?? payload.Value ?? [];
 };
 
 
-const extractSingleProject = (payload: unknown): ApiProject => {
-  const source = payload as Record<string, unknown>;
-
-  if (source && ("id" in source || "Id" in source || "name" in source || "Name" in source)) {
-    return source as ApiProject;
+const extractSingleProject = (payload: ApiProject | ProjectSingleEnvelope): ApiProject => {
+  if ("id" in payload || "Id" in payload || "name" in payload || "Name" in payload) {
+    return payload as ApiProject;
   }
 
-  return (source?.project ?? source?.Project ?? source?.item ?? source?.Item ?? source?.data ?? source?.Data ?? source?.value ?? source?.Value ?? {}) as ApiProject;
+  const envelope = payload as ProjectSingleEnvelope;
+  return envelope.project ?? envelope.Project ?? envelope.item ?? envelope.Item ?? envelope.data ?? envelope.Data ?? envelope.value ?? envelope.Value ?? {};
 };
 
 export const getProjects = async (params?: ProjectFilterParams) => {
@@ -127,17 +139,17 @@ export const getProjects = async (params?: ProjectFilterParams) => {
 
 export const getProjectById = async (id: number) => {
   const response = await apiClient.get<ApiProject>(`/Projects/${id}`);
-  return mapProject(extractSingleProject(response.data as any));
+  return mapProject(extractSingleProject(response.data));
 };
 
 export const createProject = async (project: Omit<Project, "id">) => {
   const response = await apiClient.post<ApiProject>("/Projects", project);
-  return mapProject(extractSingleProject(response.data as any));
+  return mapProject(extractSingleProject(response.data));
 };
 
 export const updateProject = async (id: number, project: Partial<Project>) => {
   const response = await apiClient.put<ApiProject>(`/Projects/${id}`, project);
-  return mapProject(extractSingleProject(response.data as any));
+  return mapProject(extractSingleProject(response.data));
 };
 
 export const deleteProject = async (id: number) => {

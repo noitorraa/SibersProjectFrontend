@@ -10,7 +10,18 @@ type ApiEmployee = Partial<Employee> & {
   Email?: string;
 };
 
-type EmployeesResponse = ApiEmployee[] | { items?: ApiEmployee[]; data?: ApiEmployee[]; results?: ApiEmployee[]; Items?: ApiEmployee[]; Data?: ApiEmployee[]; Results?: ApiEmployee[] };
+type EmployeesEnvelope = {
+  items?: ApiEmployee[];
+  data?: ApiEmployee[];
+  results?: ApiEmployee[];
+  Items?: ApiEmployee[];
+  Data?: ApiEmployee[];
+  Results?: ApiEmployee[];
+  $values?: ApiEmployee[];
+  value?: ApiEmployee[];
+  Value?: ApiEmployee[];
+};
+type EmployeesResponse = ApiEmployee[] | EmployeesEnvelope;
 
 const mapEmployee = (employee: ApiEmployee): Employee => ({
   id: employee.id ?? employee.Id ?? 0,
@@ -22,7 +33,7 @@ const mapEmployee = (employee: ApiEmployee): Employee => ({
 
 const extractEmployees = (payload: EmployeesResponse): ApiEmployee[] => {
   if (Array.isArray(payload)) return payload;
-  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? (payload as any).$values ?? (payload as any).value ?? (payload as any).Value ?? [];
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? payload.$values ?? payload.value ?? payload.Value ?? [];
 };
 
 export const getEmployees = async () => {

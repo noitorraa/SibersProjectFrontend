@@ -130,7 +130,7 @@ const managerOptions = computed(() => {
   const fromStore = employeesStore.employees;
   if (fromStore.length) return fromStore;
 
-  const map = new Map<number, any>();
+  const map = new Map<number, { id: number; firstName: string; lastName: string; patronymic?: string; email: string }>();
   for (const project of projectsStore.projects) {
     if (project.projectManager?.id) map.set(project.projectManager.id, project.projectManager);
     for (const employee of project.employees ?? []) {
@@ -141,7 +141,7 @@ const managerOptions = computed(() => {
 });
 
 const fillForm = () => {
-  console.debug("[ProjectDetail] fillForm input", {
+  console.log("[ProjectDetail] fillForm input", {
     routeProjectId: projectId,
     currentProject: projectsStore.currentProject,
     fallbackProject: projectsAsFallback.value,
@@ -159,7 +159,7 @@ const fillForm = () => {
   form.executorCompanyId = project.executorCompany?.id ?? 0;
   form.projectManagerId = project.projectManager?.id ?? 0;
 
-  console.debug("[ProjectDetail] fillForm output", { ...form });
+  console.log("[ProjectDetail] fillForm output", { ...form });
 };
 
 const availableEmployees = computed(() => {
@@ -179,7 +179,7 @@ const saveProject = async () => {
   });
 
   await projectsStore.fetchProjectById(projectId);
-  console.debug("[ProjectDetail] loaded state", {
+  console.log("[ProjectDetail] loaded state", {
     currentProject: projectsStore.currentProject,
     projectsCount: projectsStore.projects.length,
     companiesCount: companiesStore.companies.length,
@@ -219,14 +219,14 @@ const onDrop = async (event: DragEvent) => {
 };
 
 onMounted(async () => {
-  console.debug("[ProjectDetail] mounted", { routeParams: route.params, projectId });
+  console.log("[ProjectDetail] mounted", { routeParams: route.params, projectId });
   await Promise.all([
     projectsStore.fetchProjects(),
     projectsStore.fetchProjectById(projectId),
     companiesStore.fetchCompanies(),
     employeesStore.fetchEmployees(),
   ]);
-  console.debug("[ProjectDetail] loaded state", {
+  console.log("[ProjectDetail] loaded state", {
     currentProject: projectsStore.currentProject,
     projectsCount: projectsStore.projects.length,
     companiesCount: companiesStore.companies.length,

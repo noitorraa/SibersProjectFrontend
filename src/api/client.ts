@@ -6,7 +6,7 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  console.debug("[API request]", {
+  console.log("[API request]", {
     method: config.method,
     url: `${config.baseURL}${config.url}`,
     params: config.params,
@@ -17,7 +17,7 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => {
-    console.debug("[API response]", {
+    console.log("[API response]", {
       url: `${response.config.baseURL}${response.config.url}`,
       status: response.status,
       data: response.data,
