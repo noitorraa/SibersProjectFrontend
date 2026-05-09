@@ -64,6 +64,11 @@ export const useProjectsStore = defineStore("projects", () => {
     await fetchProjectById(projectId);
   };
 
+  const removeDocument = async (projectId: number, documentId: number) => {
+    await projectApi.deleteProjectDocument(projectId, documentId);
+    await fetchProjectById(projectId);
+  };
+
   return {
     projects,
     currentProject,
@@ -77,5 +82,6 @@ export const useProjectsStore = defineStore("projects", () => {
     addEmployee,
     removeEmployee,
     uploadDocument,
+    removeDocument,
   };
 });

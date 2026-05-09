@@ -76,8 +76,15 @@
           Перетащите файл сюда или выберите вручную
           <input type="file" @change="onFileSelect" />
         </div>
+        <div class="actions">
+          <span v-if="pendingFile">Выбран файл: {{ pendingFile.name }}</span>
+          <button :disabled="!pendingFile" @click="saveDocument">Сохранить файл</button>
+        </div>
         <ul>
-          <li v-for="doc in projectsStore.currentProject.documents || []" :key="doc.id">{{ doc.fileName }}</li>
+          <li v-for="doc in projectsStore.currentProject.documents || []" :key="doc.id">
+            {{ doc.fileName }}
+            <button @click="deleteDocument(doc.id)">Удалить</button>
+          </li>
         </ul>
       </div>
     </template>
@@ -102,6 +109,7 @@ const activeTab = ref<"general" | "members" | "documents">("general");
 const selectedEmployeeId = ref(0);
 const message = ref("");
 const errorMessage = ref("");
+const pendingFile = ref<File | null>(null);
 
 const form = reactive({
   name: "",
@@ -220,7 +228,19 @@ const removeEmployee = async (employeeId: number) => {
 
 const uploadFile = async (file?: File | null) => {
   if (!file) return;
-  await projectsStore.uploadDocument(projectId, file);
+  pendingFile.value = file;
+};
+
+const saveDocument = async () => {
+  if (!pendingFile.value) return;
+  await projectsStore.uploadDocument(projectId, pendingFile.value);
+  pendingFile.value = null;
+  message.value = "Файл сохранён";
+};
+
+const deleteDocument = async (documentId: number) => {
+  await projectsStore.removeDocument(projectId, documentId);
+  message.value = "Файл удалён";
 };
 
 const onFileSelect = async (event: Event) => {
