@@ -104,6 +104,17 @@ const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
   return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? [];
 };
 
+
+const extractSingleProject = (payload: unknown): ApiProject => {
+  const source = payload as Record<string, unknown>;
+
+  if (source && ("id" in source || "Id" in source || "name" in source || "Name" in source)) {
+    return source as ApiProject;
+  }
+
+  return (source?.project ?? source?.Project ?? source?.item ?? source?.Item ?? source?.data ?? source?.Data ?? {}) as ApiProject;
+};
+
 export const getProjects = async (params?: ProjectFilterParams) => {
   const queryParams = { ...params } as ProjectFilterParams & { managerId?: number };
   if (queryParams.projectManagerId && !queryParams.managerId) {
@@ -116,17 +127,17 @@ export const getProjects = async (params?: ProjectFilterParams) => {
 
 export const getProjectById = async (id: number) => {
   const response = await apiClient.get<ApiProject>(`/projects/${id}`);
-  return mapProject(response.data);
+  return mapProject(extractSingleProject(response.data as any));
 };
 
 export const createProject = async (project: Omit<Project, "id">) => {
   const response = await apiClient.post<ApiProject>("/projects", project);
-  return mapProject(response.data);
+  return mapProject(extractSingleProject(response.data as any));
 };
 
 export const updateProject = async (id: number, project: Partial<Project>) => {
   const response = await apiClient.put<ApiProject>(`/projects/${id}`, project);
-  return mapProject(response.data);
+  return mapProject(extractSingleProject(response.data as any));
 };
 
 export const deleteProject = async (id: number) => {
