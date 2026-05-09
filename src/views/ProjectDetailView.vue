@@ -220,7 +220,7 @@ const onDrop = async (event: DragEvent) => {
 
 onMounted(async () => {
   console.log("[ProjectDetail] mounted", { routeParams: route.params, projectId });
-  await Promise.all([
+  await Promise.allSettled([
     projectsStore.fetchProjects(),
     projectsStore.fetchProjectById(projectId),
     companiesStore.fetchCompanies(),
