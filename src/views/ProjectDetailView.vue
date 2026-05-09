@@ -20,21 +20,21 @@
         <label>
           Заказчик
           <select v-model.number="form.customerCompanyId" required>
-            <option v-for="company in companiesStore.companies" :key="company.id" :value="company.id">{{ company.name }}</option>
+            <option v-for="company in companyOptions" :key="company.id" :value="company.id">{{ company.name }}</option>
           </select>
         </label>
 
         <label>
           Исполнитель
           <select v-model.number="form.executorCompanyId" required>
-            <option v-for="company in companiesStore.companies" :key="`exec-${company.id}`" :value="company.id">{{ company.name }}</option>
+            <option v-for="company in companyOptions" :key="`exec-${company.id}`" :value="company.id">{{ company.name }}</option>
           </select>
         </label>
 
         <label>
           Руководитель
           <select v-model.number="form.projectManagerId" required>
-            <option v-for="employee in employeesStore.employees" :key="employee.id" :value="employee.id">
+            <option v-for="employee in managerOptions" :key="employee.id" :value="employee.id">
               {{ employee.lastName }} {{ employee.firstName }}
             </option>
           </select>
@@ -111,11 +111,40 @@ const form = reactive({
   projectManagerId: 0,
 });
 
+const projectsAsFallback = computed(() => projectsStore.projects.find((p) => p.id === projectId));
+
+const companyOptions = computed(() => {
+  const fromStore = companiesStore.companies;
+  if (fromStore.length) return fromStore;
+
+  const projects = projectsStore.projects;
+  const map = new Map<number, { id: number; name: string }>();
+  for (const project of projects) {
+    if (project.customerCompany?.id) map.set(project.customerCompany.id, project.customerCompany);
+    if (project.executorCompany?.id) map.set(project.executorCompany.id, project.executorCompany);
+  }
+  return [...map.values()];
+});
+
+const managerOptions = computed(() => {
+  const fromStore = employeesStore.employees;
+  if (fromStore.length) return fromStore;
+
+  const map = new Map<number, any>();
+  for (const project of projectsStore.projects) {
+    if (project.projectManager?.id) map.set(project.projectManager.id, project.projectManager);
+    for (const employee of project.employees ?? []) {
+      if (employee.id) map.set(employee.id, employee);
+    }
+  }
+  return [...map.values()];
+});
+
 const fillForm = () => {
-  const project = projectsStore.currentProject;
+  const project = projectsStore.currentProject ?? projectsAsFallback.value;
   if (!project) return;
 
-  form.name = project.name;
+  form.name = project.name || "";
   form.startDate = project.startDate?.slice(0, 10) || "";
   form.endDate = project.endDate?.slice(0, 10) || "";
   form.priority = project.priority;
@@ -135,9 +164,9 @@ const saveProject = async () => {
     startDate: form.startDate,
     endDate: form.endDate,
     priority: form.priority,
-    customerCompany: companiesStore.companies.find((c) => c.id === form.customerCompanyId),
-    executorCompany: companiesStore.companies.find((c) => c.id === form.executorCompanyId),
-    projectManager: employeesStore.employees.find((e) => e.id === form.projectManagerId),
+    customerCompany: companyOptions.value.find((c) => c.id === form.customerCompanyId),
+    executorCompany: companyOptions.value.find((c) => c.id === form.executorCompanyId),
+    projectManager: managerOptions.value.find((e) => e.id === form.projectManagerId),
   });
 
   await projectsStore.fetchProjectById(projectId);
@@ -176,6 +205,7 @@ const onDrop = async (event: DragEvent) => {
 
 onMounted(async () => {
   await Promise.all([
+    projectsStore.fetchProjects(),
     projectsStore.fetchProjectById(projectId),
     companiesStore.fetchCompanies(),
     employeesStore.fetchEmployees(),
