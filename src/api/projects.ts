@@ -69,12 +69,12 @@ const mapProject = (project: ApiProject): Project => ({
   customerCompany: mapCompany(
     project.customerCompany ?? project.CustomerCompany,
     project.customerCompanyId ?? project.CustomerCompanyId,
-    project.CustomerCompanyName,
+    project.customerCompanyName ?? project.CustomerCompanyName,
   ),
   executorCompany: mapCompany(
     project.executorCompany ?? project.ExecutorCompany ?? project.ContractorCompany,
     project.executorCompanyId ?? project.ExecutorCompanyId ?? project.contractorCompanyId ?? project.ContractorCompanyId,
-    project.ExecutorCompanyName ?? project.ContractorCompanyName,
+    project.executorCompanyName ?? project.ExecutorCompanyName ?? project.contractorCompanyName ?? project.ContractorCompanyName,
   ),
   startDate: project.startDate ?? project.StartDate ?? "",
   endDate: project.endDate ?? project.EndDate ?? "",
