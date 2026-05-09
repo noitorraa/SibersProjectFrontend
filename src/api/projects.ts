@@ -1,24 +1,127 @@
 import apiClient from "./client";
-import type { Project, ProjectFilterParams } from "@/types";
+import type { Company, Employee, Project, ProjectFilterParams } from "@/types";
+
+type ApiCompany = Partial<Company> & {
+  Id?: number;
+  Name?: string;
+};
+
+type ApiEmployee = Partial<Employee> & {
+  Id?: number;
+  FirstName?: string;
+  LastName?: string;
+  Patronymic?: string;
+  MiddleName?: string;
+  Email?: string;
+};
+
+type ApiProject = Partial<Project> & {
+  Documents?: Project["documents"];
+  Id?: number;
+  Name?: string;
+  customerCompanyId?: number;
+  customerCompanyName?: string;
+  contractorCompany?: ApiCompany;
+  contractorCompanyId?: number;
+  contractorCompanyName?: string;
+  executorCompany?: ApiCompany;
+  executorCompanyId?: number;
+  executorCompanyName?: string;
+  projectManager?: ApiEmployee;
+  projectManagerId?: number;
+  manager?: ApiEmployee;
+  managerId?: number;
+  CustomerCompany?: ApiCompany;
+  CustomerCompanyId?: number;
+  CustomerCompanyName?: string;
+  ContractorCompany?: ApiCompany;
+  ContractorCompanyId?: number;
+  ContractorCompanyName?: string;
+  ExecutorCompany?: ApiCompany;
+  ExecutorCompanyId?: number;
+  ExecutorCompanyName?: string;
+  StartDate?: string;
+  EndDate?: string;
+  Priority?: number;
+  ProjectManager?: ApiEmployee;
+  ProjectManagerId?: number;
+  Manager?: ApiEmployee;
+  ManagerId?: number;
+  Employees?: ApiEmployee[];
+};
+
+const mapCompany = (company?: ApiCompany | null, fallbackId?: number, fallbackName?: string): Company => ({
+  id: company?.id ?? company?.Id ?? fallbackId ?? 0,
+  name: company?.name ?? company?.Name ?? fallbackName ?? "Не указана",
+});
+
+const mapEmployee = (employee?: ApiEmployee | null, fallbackId?: number): Employee => ({
+  id: employee?.id ?? employee?.Id ?? fallbackId ?? 0,
+  firstName: employee?.firstName ?? employee?.FirstName ?? "",
+  lastName: employee?.lastName ?? employee?.LastName ?? "",
+  patronymic: employee?.patronymic ?? employee?.Patronymic ?? employee?.MiddleName ?? "",
+  email: employee?.email ?? employee?.Email ?? "",
+});
+
+const mapProject = (project: ApiProject): Project => ({
+  id: project.id ?? project.Id ?? 0,
+  name: project.name ?? project.Name ?? "Без названия",
+  customerCompany: mapCompany(
+    project.customerCompany ?? project.CustomerCompany,
+    project.customerCompanyId ?? project.CustomerCompanyId,
+    project.customerCompanyName ?? project.CustomerCompanyName,
+  ),
+  executorCompany: mapCompany(
+    project.executorCompany ?? project.ExecutorCompany ?? project.ContractorCompany,
+    project.executorCompanyId ?? project.ExecutorCompanyId ?? project.contractorCompanyId ?? project.ContractorCompanyId,
+    project.executorCompanyName ?? project.ExecutorCompanyName ?? project.contractorCompanyName ?? project.ContractorCompanyName,
+  ),
+  startDate: project.startDate ?? project.StartDate ?? "",
+  endDate: project.endDate ?? project.EndDate ?? "",
+  priority: project.priority ?? project.Priority ?? 0,
+  projectManager: mapEmployee(
+    project.projectManager ?? project.ProjectManager ?? project.manager ?? project.Manager,
+    project.projectManagerId ?? project.ProjectManagerId ?? project.managerId ?? project.ManagerId,
+  ),
+  employees: (project.employees ?? project.Employees ?? []).map((employee) => mapEmployee(employee)),
+  documents: project.documents ?? project.Documents,
+});
+
+type ProjectsListResponse =
+  | ApiProject[]
+  | {
+      items?: ApiProject[];
+      Items?: ApiProject[];
+      data?: ApiProject[];
+      Data?: ApiProject[];
+      results?: ApiProject[];
+      Results?: ApiProject[];
+    };
+
+const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
+  if (Array.isArray(payload)) return payload;
+
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? [];
+};
 
 export const getProjects = async (params?: ProjectFilterParams) => {
-  const response = await apiClient.get<Project[]>("/projects", { params });
-  return response.data;
+  const response = await apiClient.get<ProjectsListResponse>("/projects", { params });
+  return extractProjects(response.data).map(mapProject);
 };
 
 export const getProjectById = async (id: number) => {
-  const response = await apiClient.get<Project>(`/projects/${id}`);
-  return response.data;
+  const response = await apiClient.get<ApiProject>(`/projects/${id}`);
+  return mapProject(response.data);
 };
 
 export const createProject = async (project: Omit<Project, "id">) => {
-  const response = await apiClient.post<Project>("/projects", project);
-  return response.data;
+  const response = await apiClient.post<ApiProject>("/projects", project);
+  return mapProject(response.data);
 };
 
 export const updateProject = async (id: number, project: Partial<Project>) => {
-  const response = await apiClient.put<Project>(`/projects/${id}`, project);
-  return response.data;
+  const response = await apiClient.put<ApiProject>(`/projects/${id}`, project);
+  return mapProject(response.data);
 };
 
 export const deleteProject = async (id: number) => {
