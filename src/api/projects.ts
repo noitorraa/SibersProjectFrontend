@@ -15,6 +15,7 @@ type ApiEmployee = Partial<Employee> & {
 };
 
 type ApiProject = Partial<Project> & {
+  Documents?: Project["documents"];
   Id?: number;
   Name?: string;
   CustomerCompany?: ApiCompany;
@@ -52,12 +53,29 @@ const mapProject = (project: ApiProject): Project => ({
   priority: project.priority ?? project.Priority ?? 0,
   projectManager: mapEmployee(project.projectManager ?? project.ProjectManager, project.ProjectManagerId),
   employees: (project.employees ?? project.Employees ?? []).map((employee) => mapEmployee(employee)),
-  documents: project.documents,
+  documents: project.documents ?? project.Documents,
 });
 
+type ProjectsListResponse =
+  | ApiProject[]
+  | {
+      items?: ApiProject[];
+      Items?: ApiProject[];
+      data?: ApiProject[];
+      Data?: ApiProject[];
+      results?: ApiProject[];
+      Results?: ApiProject[];
+    };
+
+const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
+  if (Array.isArray(payload)) return payload;
+
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? [];
+};
+
 export const getProjects = async (params?: ProjectFilterParams) => {
-  const response = await apiClient.get<ApiProject[]>("/projects", { params });
-  return response.data.map(mapProject);
+  const response = await apiClient.get<ProjectsListResponse>("/projects", { params });
+  return extractProjects(response.data).map(mapProject);
 };
 
 export const getProjectById = async (id: number) => {
