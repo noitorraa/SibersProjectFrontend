@@ -1,8 +1,15 @@
 <template>
-  <div class="project-card" @click="$emit('click')">
-    <h3>{{ project.name }}</h3>
-    <p>Приоритет: {{ project.priority }}</p>
-    <p>{{ formatDate(project.startDate) }} – {{ formatDate(project.endDate) }}</p>
+  <div class="project-card">
+    <div class="project-card__content" @click="$emit('open')">
+      <h3>{{ project.name }}</h3>
+      <p>Приоритет: {{ project.priority }}</p>
+      <p>{{ formatDate(project.startDate) }} – {{ formatDate(project.endDate) }}</p>
+    </div>
+    <div class="project-card__actions">
+      <button @click.stop="$emit('open')">Детали</button>
+      <button @click.stop="$emit('edit')">Редактировать</button>
+      <button class="danger" @click.stop="$emit('delete')">Удалить</button>
+    </div>
   </div>
 </template>
 
@@ -10,7 +17,7 @@
 import type { Project } from "@/types";
 
 defineProps<{ project: Project }>();
-defineEmits<{ (e: "click"): void }>();
+defineEmits<{ (e: 'open'): void; (e: 'edit'): void; (e: 'delete'): void }>();
 
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
 </script>
@@ -21,9 +28,22 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.project-card__content {
   cursor: pointer;
 }
 .project-card:hover {
   background: #f5f5f5;
+}
+.project-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.danger {
+  color: #b00020;
 }
 </style>

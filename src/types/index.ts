@@ -37,9 +37,11 @@ export interface ProjectFilterParams {
   endDateFrom?: string;
   endDateTo?: string;
   priority?: number;
-  customerCompanyId?: number;
-  executorCompanyId?: number;
-  projectManagerId?: number;
+  status?: string;
+  customer?: number;
+  contractor?: number;
+  executor?: number;
+  manager?: number;
   sortBy?: string;
   sortDirection?: "asc" | "desc";
   page?: number;
