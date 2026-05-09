@@ -105,7 +105,12 @@ const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
 };
 
 export const getProjects = async (params?: ProjectFilterParams) => {
-  const response = await apiClient.get<ProjectsListResponse>("/projects", { params });
+  const queryParams = { ...params } as ProjectFilterParams & { managerId?: number };
+  if (queryParams.projectManagerId && !queryParams.managerId) {
+    queryParams.managerId = queryParams.projectManagerId;
+  }
+
+  const response = await apiClient.get<ProjectsListResponse>("/projects", { params: queryParams });
   return extractProjects(response.data).map(mapProject);
 };
 
