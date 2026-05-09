@@ -26,30 +26,30 @@ const extractEmployees = (payload: EmployeesResponse): ApiEmployee[] => {
 };
 
 export const getEmployees = async () => {
-  const response = await apiClient.get<EmployeesResponse>("/employees");
+  const response = await apiClient.get<EmployeesResponse>("/Employees");
   return extractEmployees(response.data).map(mapEmployee);
 };
 
 export const getEmployeeById = async (id: number) => {
-  const response = await apiClient.get<ApiEmployee>(`/employees/${id}`);
+  const response = await apiClient.get<ApiEmployee>(`/Employees/${id}`);
   return mapEmployee(response.data);
 };
 
 export const createEmployee = async (project: Omit<Employee, "id">) => {
-  const response = await apiClient.post<ApiEmployee>("/employees", project);
+  const response = await apiClient.post<ApiEmployee>("/Employees", project);
   return mapEmployee(response.data);
 };
 
 export const updateEmployee = async (id: number, project: Partial<Employee>) => {
-  const response = await apiClient.put<ApiEmployee>(`/employees/${id}`, project);
+  const response = await apiClient.put<ApiEmployee>(`/Employees/${id}`, project);
   return mapEmployee(response.data);
 };
 
 export const deleteEmployee = async (id: number) => {
-  await apiClient.delete(`/employees/${id}`);
+  await apiClient.delete(`/Employees/${id}`);
 };
 
 export const searchEmployees = async (query: string) => {
-  const response = await apiClient.get<EmployeesResponse>("/employees/search", { params: { query } });
+  const response = await apiClient.get<EmployeesResponse>("/Employees/search", { params: { query } });
   return extractEmployees(response.data).map(mapEmployee);
 };

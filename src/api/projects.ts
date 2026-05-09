@@ -121,46 +121,46 @@ export const getProjects = async (params?: ProjectFilterParams) => {
     queryParams.managerId = queryParams.projectManagerId;
   }
 
-  const response = await apiClient.get<ProjectsListResponse>("/projects", { params: queryParams });
+  const response = await apiClient.get<ProjectsListResponse>("/Projects", { params: queryParams });
   return extractProjects(response.data).map(mapProject);
 };
 
 export const getProjectById = async (id: number) => {
-  const response = await apiClient.get<ApiProject>(`/projects/${id}`);
+  const response = await apiClient.get<ApiProject>(`/Projects/${id}`);
   return mapProject(extractSingleProject(response.data as any));
 };
 
 export const createProject = async (project: Omit<Project, "id">) => {
-  const response = await apiClient.post<ApiProject>("/projects", project);
+  const response = await apiClient.post<ApiProject>("/Projects", project);
   return mapProject(extractSingleProject(response.data as any));
 };
 
 export const updateProject = async (id: number, project: Partial<Project>) => {
-  const response = await apiClient.put<ApiProject>(`/projects/${id}`, project);
+  const response = await apiClient.put<ApiProject>(`/Projects/${id}`, project);
   return mapProject(extractSingleProject(response.data as any));
 };
 
 export const deleteProject = async (id: number) => {
-  await apiClient.delete(`/projects/${id}`);
+  await apiClient.delete(`/Projects/${id}`);
 };
 
 export const addEmployeeToProject = async (projectId: number, employeeId: number) => {
-  await apiClient.post(`/projects/${projectId}/employees/${employeeId}`);
+  await apiClient.post(`/Projects/${projectId}/employees/${employeeId}`);
 };
 
 export const removeEmployeeFromProject = async (projectId: number, employeeId: number) => {
-  await apiClient.delete(`/projects/${projectId}/employees/${employeeId}`);
+  await apiClient.delete(`/Projects/${projectId}/employees/${employeeId}`);
 };
 
 export const uploadProjectDocument = async (projectId: number, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
-  const response = await apiClient.post(`/projects/${projectId}/documents`, formData, {
+  const response = await apiClient.post(`/Projects/${projectId}/documents`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
 
 export const deleteProjectDocument = async (projectId: number, documentId: number) => {
-  await apiClient.delete(`/projects/${projectId}/documents/${documentId}`);
+  await apiClient.delete(`/Projects/${projectId}/documents/${documentId}`);
 };

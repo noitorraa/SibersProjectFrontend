@@ -15,25 +15,25 @@ const extractCompanies = (payload: CompaniesResponse): ApiCompany[] => {
 };
 
 export const getCompanies = async () => {
-  const response = await apiClient.get<CompaniesResponse>("/companies");
+  const response = await apiClient.get<CompaniesResponse>("/Companies");
   return extractCompanies(response.data).map(mapCompany);
 };
 
 export const getCompanyById = async (id: number) => {
-  const response = await apiClient.get<ApiCompany>(`/companies/${id}`);
+  const response = await apiClient.get<ApiCompany>(`/Companies/${id}`);
   return mapCompany(response.data);
 };
 
 export const createCompany = async (company: Omit<Company, "id">) => {
-  const response = await apiClient.post<ApiCompany>("/companies", company);
+  const response = await apiClient.post<ApiCompany>("/Companies", company);
   return mapCompany(response.data);
 };
 
 export const updateCompany = async (id: number, company: Partial<Company>) => {
-  const response = await apiClient.put<ApiCompany>(`/companies/${id}`, company);
+  const response = await apiClient.put<ApiCompany>(`/Companies/${id}`, company);
   return mapCompany(response.data);
 };
 
 export const deleteCompany = async (id: number) => {
-  await apiClient.delete(`/companies/${id}`);
+  await apiClient.delete(`/Companies/${id}`);
 };
