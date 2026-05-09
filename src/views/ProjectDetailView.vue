@@ -141,6 +141,13 @@ const managerOptions = computed(() => {
 });
 
 const fillForm = () => {
+  console.debug("[ProjectDetail] fillForm input", {
+    routeProjectId: projectId,
+    currentProject: projectsStore.currentProject,
+    fallbackProject: projectsAsFallback.value,
+    companiesCount: companyOptions.value.length,
+    managersCount: managerOptions.value.length,
+  });
   const project = projectsStore.currentProject ?? projectsAsFallback.value;
   if (!project) return;
 
@@ -151,6 +158,8 @@ const fillForm = () => {
   form.customerCompanyId = project.customerCompany?.id ?? 0;
   form.executorCompanyId = project.executorCompany?.id ?? 0;
   form.projectManagerId = project.projectManager?.id ?? 0;
+
+  console.debug("[ProjectDetail] fillForm output", { ...form });
 };
 
 const availableEmployees = computed(() => {
@@ -170,6 +179,12 @@ const saveProject = async () => {
   });
 
   await projectsStore.fetchProjectById(projectId);
+  console.debug("[ProjectDetail] loaded state", {
+    currentProject: projectsStore.currentProject,
+    projectsCount: projectsStore.projects.length,
+    companiesCount: companiesStore.companies.length,
+    employeesCount: employeesStore.employees.length,
+  });
   fillForm();
   message.value = "Проект сохранён";
 };
@@ -204,12 +219,19 @@ const onDrop = async (event: DragEvent) => {
 };
 
 onMounted(async () => {
+  console.debug("[ProjectDetail] mounted", { routeParams: route.params, projectId });
   await Promise.all([
     projectsStore.fetchProjects(),
     projectsStore.fetchProjectById(projectId),
     companiesStore.fetchCompanies(),
     employeesStore.fetchEmployees(),
   ]);
+  console.debug("[ProjectDetail] loaded state", {
+    currentProject: projectsStore.currentProject,
+    projectsCount: projectsStore.projects.length,
+    companiesCount: companiesStore.companies.length,
+    employeesCount: employeesStore.employees.length,
+  });
   fillForm();
 });
 </script>
