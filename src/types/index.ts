@@ -19,6 +19,7 @@ export interface Project {
   startDate: string;
   endDate: string;
   priority: number;
+  status?: string;
   projectManager: Employee;
   employees: Employee[];
   documents?: ProjectDocument[];

@@ -43,6 +43,8 @@ type ApiProject = Partial<Project> & {
   StartDate?: string;
   EndDate?: string;
   Priority?: number;
+  status?: string;
+  Status?: string;
   ProjectManager?: ApiEmployee;
   ProjectManagerId?: number;
   Manager?: ApiEmployee;
@@ -59,6 +61,7 @@ type ProjectWriteDto = {
   customerCompanyId?: number;
   contractorCompanyId?: number;
   managerId?: number;
+  status?: string;
 };
 
 const toProjectWriteDto = (project: Partial<Project>): ProjectWriteDto => ({
@@ -69,6 +72,7 @@ const toProjectWriteDto = (project: Partial<Project>): ProjectWriteDto => ({
   customerCompanyId: project.customerCompany?.id,
   contractorCompanyId: project.executorCompany?.id,
   managerId: project.projectManager?.id,
+  status: project.status,
 });
 const mapCompany = (company?: ApiCompany | null, fallbackId?: number, fallbackName?: string): Company => ({
   id: Number(company?.id ?? company?.Id ?? fallbackId ?? 0),
@@ -104,6 +108,7 @@ const mapProject = (project: ApiProject): Project => ({
     project.projectManagerId ?? project.ProjectManagerId ?? project.managerId ?? project.ManagerId,
   ),
   employees: (project.employees ?? project.Employees ?? []).map((employee) => mapEmployee(employee)),
+  status: project.status ?? project.Status,
   documents: project.documents ?? project.Documents,
 });
 
@@ -177,11 +182,11 @@ export const deleteProject = async (id: number) => {
 };
 
 export const addEmployeeToProject = async (projectId: number, employeeId: number) => {
-  await apiClient.post(`/Projects/${projectId}/employees/${employeeId}`);
+  await apiClient.post(`/Employees/${employeeId}/projects/${projectId}`);
 };
 
 export const removeEmployeeFromProject = async (projectId: number, employeeId: number) => {
-  await apiClient.delete(`/Projects/${projectId}/employees/${employeeId}`);
+  await apiClient.delete(`/Employees/${employeeId}/projects/${projectId}`);
 };
 
 export const uploadProjectDocument = async (projectId: number, file: File) => {

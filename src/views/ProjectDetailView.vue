@@ -176,6 +176,7 @@ const saveProject = async () => {
     customerCompany: companyOptions.value.find((c) => c.id === form.customerCompanyId),
     executorCompany: companyOptions.value.find((c) => c.id === form.executorCompanyId),
     projectManager: managerOptions.value.find((e) => e.id === form.projectManagerId),
+    status: projectsStore.currentProject?.status ?? "Active",
   });
 
   await projectsStore.fetchProjectById(projectId);
