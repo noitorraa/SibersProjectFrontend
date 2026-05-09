@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Project, ProjectFilterParams } from "@/types";
 import * as projectApi from "@/api/projects";
+import * as employeesApi from "@/api/employees";
 
 export const useProjectsStore = defineStore("projects", () => {
   const projects = ref<Project[]>([]);
@@ -22,6 +23,9 @@ export const useProjectsStore = defineStore("projects", () => {
     loading.value = true;
     try {
       currentProject.value = await projectApi.getProjectById(id);
+      if (currentProject.value && (!currentProject.value.employees || !currentProject.value.employees.length)) {
+        currentProject.value.employees = await employeesApi.getEmployeesByProject(id);
+      }
     } finally {
       loading.value = false;
     }
@@ -47,7 +51,6 @@ export const useProjectsStore = defineStore("projects", () => {
 
   const addEmployee = async (projectId: number, employeeId: number) => {
     await projectApi.addEmployeeToProject(projectId, employeeId);
-    // refresh project or update local state
     await fetchProjectById(projectId);
   };
 

@@ -64,3 +64,8 @@ export const searchEmployees = async (query: string) => {
   const response = await apiClient.get<EmployeesResponse>("/Employees/search", { params: { query } });
   return extractEmployees(response.data).map(mapEmployee);
 };
+
+export const getEmployeesByProject = async (projectId: number) => {
+  const response = await apiClient.get<EmployeesResponse>(`/Employees/by-project/${projectId}`);
+  return extractEmployees(response.data).map(mapEmployee);
+};

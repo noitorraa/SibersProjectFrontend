@@ -143,7 +143,9 @@ const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
 };
 
 
-const extractSingleProject = (payload: ApiProject | ProjectSingleEnvelope): ApiProject => {
+const extractSingleProject = (payload: ApiProject | ProjectSingleEnvelope | null | undefined): ApiProject => {
+  if (!payload || typeof payload !== "object") return {};
+
   if ("id" in payload || "Id" in payload || "name" in payload || "Name" in payload) {
     return payload as ApiProject;
   }
@@ -173,7 +175,8 @@ export const createProject = async (project: Omit<Project, "id">) => {
 };
 
 export const updateProject = async (id: number, project: Partial<Project>) => {
-  const response = await apiClient.put<ApiProject>(`/Projects/${id}`, toProjectWriteDto(project));
+  const response = await apiClient.put<ApiProject | null>(`/Projects/${id}`, toProjectWriteDto(project));
+  if (!response.data) return await getProjectById(id);
   return mapProject(extractSingleProject(response.data));
 };
 

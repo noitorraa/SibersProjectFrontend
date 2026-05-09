@@ -46,6 +46,7 @@
           <RouterLink to="/projects">Назад к списку</RouterLink>
         </div>
         <p v-if="message" class="success">{{ message }}</p>
+        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
       </form>
 
       <div v-else-if="activeTab === 'members'">
@@ -100,6 +101,7 @@ const projectId = Number(route.params.id);
 const activeTab = ref<"general" | "members" | "documents">("general");
 const selectedEmployeeId = ref(0);
 const message = ref("");
+const errorMessage = ref("");
 
 const form = reactive({
   name: "",
@@ -168,6 +170,7 @@ const availableEmployees = computed(() => {
 });
 
 const saveProject = async () => {
+  errorMessage.value = "";
   await projectsStore.updateExistingProject(projectId, {
     name: form.name,
     startDate: form.startDate,
@@ -188,6 +191,9 @@ const saveProject = async () => {
   });
   fillForm();
   message.value = "Проект сохранён";
+  setTimeout(() => {
+    router.push("/projects");
+  }, 600);
 };
 
 const deleteProject = async () => {
@@ -198,8 +204,14 @@ const deleteProject = async () => {
 
 const addEmployee = async () => {
   if (!selectedEmployeeId.value) return;
-  await projectsStore.addEmployee(projectId, selectedEmployeeId.value);
-  selectedEmployeeId.value = 0;
+  errorMessage.value = "";
+  try {
+    await projectsStore.addEmployee(projectId, selectedEmployeeId.value);
+    selectedEmployeeId.value = 0;
+    message.value = "Сотрудник добавлен";
+  } catch (error: unknown) {
+    errorMessage.value = (error as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Не удалось добавить сотрудника";
+  }
 };
 
 const removeEmployee = async (employeeId: number) => {
@@ -246,5 +258,6 @@ label { display: flex; flex-direction: column; gap: 0.25rem; }
 .actions { grid-column: 1 / -1; display: flex; gap: 0.75rem; align-items: center; }
 .danger { background: #fbd5d5; }
 .success { grid-column: 1 / -1; color: #0a7a36; }
+.error { grid-column: 1 / -1; color: #c21d1d; }
 .dropzone { border: 1px dashed #999; padding: 1rem; margin-bottom: 1rem; }
 </style>
