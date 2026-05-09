@@ -29,9 +29,9 @@
 
         <label>
           Заказчик
-          <select v-model.number="localFilters.customer">
-            <option :value="undefined">Все</option>
-            <option v-for="company in companiesStore.companies" :key="`customer-${company.id}`" :value="company.id">
+          <select v-model="localFilters.customer">
+            <option value="">Все</option>
+            <option v-for="company in companiesStore.companies" :key="`customer-${company.id}`" :value="String(company.id)">
               {{ company.name }}
             </option>
           </select>
@@ -39,9 +39,9 @@
 
         <label>
           Исполнитель
-          <select v-model.number="localFilters.executor">
-            <option :value="undefined">Все</option>
-            <option v-for="company in companiesStore.companies" :key="`executor-${company.id}`" :value="company.id">
+          <select v-model="localFilters.executor">
+            <option value="">Все</option>
+            <option v-for="company in companiesStore.companies" :key="`executor-${company.id}`" :value="String(company.id)">
               {{ company.name }}
             </option>
           </select>
@@ -49,9 +49,9 @@
 
         <label>
           Менеджер
-          <select v-model.number="localFilters.manager">
-            <option :value="undefined">Все</option>
-            <option v-for="employee in employeesStore.employees" :key="employee.id" :value="employee.id">
+          <select v-model="localFilters.manager">
+            <option value="">Все</option>
+            <option v-for="employee in employeesStore.employees" :key="employee.id" :value="String(employee.id)">
               {{ employee.lastName }} {{ employee.firstName }}
             </option>
           </select>
@@ -114,44 +114,55 @@ const projectsStore = useProjectsStore();
 const companiesStore = useCompaniesStore();
 const employeesStore = useEmployeesStore();
 const openWizard = ref(false);
-const localFilters = ref<ProjectFilterParams>({
+const localFilters = ref<Record<string, string | number | undefined>>({
   ...projectsStore.filters,
+  customer: projectsStore.filters.customer ? String(projectsStore.filters.customer) : "",
+  executor: projectsStore.filters.executor ? String(projectsStore.filters.executor) : "",
+  manager: projectsStore.filters.manager ? String(projectsStore.filters.manager) : "",
   sortDirection: projectsStore.filters.sortDirection ?? "asc",
 });
 
-const refreshProjects = () => {
-  projectsStore.fetchProjects();
+const normalizeFilters = (): ProjectFilterParams => {
+  const f = localFilters.value;
+  return {
+    startDateFrom: f.startDateFrom as string | undefined,
+    startDateTo: f.startDateTo as string | undefined,
+    endDateFrom: f.endDateFrom as string | undefined,
+    endDateTo: f.endDateTo as string | undefined,
+    priority: typeof f.priority === "number" && !Number.isNaN(f.priority) ? f.priority : undefined,
+    status: f.status ? String(f.status) : undefined,
+    customer: f.customer ? Number(f.customer) : undefined,
+    executor: f.executor ? Number(f.executor) : undefined,
+    manager: f.manager ? Number(f.manager) : undefined,
+    sortBy: f.sortBy ? String(f.sortBy) : undefined,
+    sortDirection: f.sortDirection === "desc" ? "desc" : "asc",
+  };
 };
 
-const goToProject = (id: number) => {
-  router.push(`/projects/${id}`);
-};
-
-const editProject = (id: number) => {
-  router.push(`/projects/${id}?mode=edit`);
-};
+const refreshProjects = () => projectsStore.fetchProjects();
+const goToProject = (id: number) => router.push(`/projects/${id}`);
+const editProject = (id: number) => router.push(`/projects/${id}?mode=edit`);
 
 const applyFilters = () => {
-  projectsStore.filters = {
-    ...localFilters.value,
-  };
+  projectsStore.filters = normalizeFilters();
   projectsStore.fetchProjects();
 };
 
 const resetFilters = () => {
-  localFilters.value = { sortDirection: "asc" };
+  localFilters.value = { sortDirection: "asc", customer: "", executor: "", manager: "" };
   projectsStore.filters = {};
   projectsStore.fetchProjects();
 };
 
 const deleteProject = async (id: number) => {
-  const isConfirmed = window.confirm("Удалить проект? Это действие нельзя отменить.");
-  if (!isConfirmed) return;
+  if (!window.confirm("Удалить проект? Это действие нельзя отменить.")) return;
   await projectsStore.removeProject(id);
 };
 
-onMounted(async () => {
-  await Promise.all([projectsStore.fetchProjects(), companiesStore.fetchCompanies(), employeesStore.fetchEmployees()]);
+onMounted(() => {
+  projectsStore.fetchProjects();
+  companiesStore.fetchCompanies().catch(() => undefined);
+  employeesStore.fetchEmployees().catch(() => undefined);
 });
 </script>
 

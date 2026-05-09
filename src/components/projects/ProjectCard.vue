@@ -1,6 +1,6 @@
 <template>
-  <div class="project-card">
-    <div class="project-card__content" @click="$emit('open')">
+  <div class="project-card" @click="$emit('open')">
+    <div class="project-card__content">
       <h3>{{ project.name }}</h3>
       <p>Приоритет: {{ project.priority }}</p>
       <p>{{ formatDate(project.startDate) }} – {{ formatDate(project.endDate) }}</p>
