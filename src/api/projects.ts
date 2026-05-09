@@ -51,12 +51,12 @@ type ApiProject = Partial<Project> & {
 };
 
 const mapCompany = (company?: ApiCompany | null, fallbackId?: number, fallbackName?: string): Company => ({
-  id: company?.id ?? company?.Id ?? fallbackId ?? 0,
+  id: Number(company?.id ?? company?.Id ?? fallbackId ?? 0),
   name: company?.name ?? company?.Name ?? fallbackName ?? "Не указана",
 });
 
 const mapEmployee = (employee?: ApiEmployee | null, fallbackId?: number): Employee => ({
-  id: employee?.id ?? employee?.Id ?? fallbackId ?? 0,
+  id: Number(employee?.id ?? employee?.Id ?? fallbackId ?? 0),
   firstName: employee?.firstName ?? employee?.FirstName ?? "",
   lastName: employee?.lastName ?? employee?.LastName ?? "",
   patronymic: employee?.patronymic ?? employee?.Patronymic ?? employee?.MiddleName ?? "",
@@ -64,7 +64,7 @@ const mapEmployee = (employee?: ApiEmployee | null, fallbackId?: number): Employ
 });
 
 const mapProject = (project: ApiProject): Project => ({
-  id: project.id ?? project.Id ?? 0,
+  id: Number(project.id ?? project.Id ?? 0),
   name: project.name ?? project.Name ?? "Без названия",
   customerCompany: mapCompany(
     project.customerCompany ?? project.CustomerCompany,
@@ -78,7 +78,7 @@ const mapProject = (project: ApiProject): Project => ({
   ),
   startDate: project.startDate ?? project.StartDate ?? "",
   endDate: project.endDate ?? project.EndDate ?? "",
-  priority: project.priority ?? project.Priority ?? 0,
+  priority: Number(project.priority ?? project.Priority ?? 0),
   projectManager: mapEmployee(
     project.projectManager ?? project.ProjectManager ?? project.manager ?? project.Manager,
     project.projectManagerId ?? project.ProjectManagerId ?? project.managerId ?? project.ManagerId,

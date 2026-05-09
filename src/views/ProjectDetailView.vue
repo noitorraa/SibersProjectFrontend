@@ -111,7 +111,7 @@ const form = reactive({
   projectManagerId: 0,
 });
 
-const projectsAsFallback = computed(() => projectsStore.projects.find((p) => p.id === projectId));
+const projectsAsFallback = computed(() => projectsStore.projects.find((p) => Number(p.id) === projectId));
 
 const companyOptions = computed(() => {
   const fromStore = companiesStore.companies;
