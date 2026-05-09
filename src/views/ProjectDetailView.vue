@@ -190,6 +190,7 @@ const saveProject = async () => {
 };
 
 const deleteProject = async () => {
+  if (!window.confirm("Удалить проект? Это действие нельзя отменить.")) return;
   await projectsStore.removeProject(projectId);
   router.push("/projects");
 };

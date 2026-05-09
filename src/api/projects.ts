@@ -50,6 +50,26 @@ type ApiProject = Partial<Project> & {
   Employees?: ApiEmployee[];
 };
 
+
+type ProjectWriteDto = {
+  name?: string;
+  startDate?: string;
+  endDate?: string;
+  priority?: number;
+  customerCompanyId?: number;
+  contractorCompanyId?: number;
+  managerId?: number;
+};
+
+const toProjectWriteDto = (project: Partial<Project>): ProjectWriteDto => ({
+  name: project.name,
+  startDate: project.startDate,
+  endDate: project.endDate,
+  priority: project.priority,
+  customerCompanyId: project.customerCompany?.id,
+  contractorCompanyId: project.executorCompany?.id,
+  managerId: project.projectManager?.id,
+});
 const mapCompany = (company?: ApiCompany | null, fallbackId?: number, fallbackName?: string): Company => ({
   id: Number(company?.id ?? company?.Id ?? fallbackId ?? 0),
   name: company?.name ?? company?.Name ?? fallbackName ?? "Не указана",
@@ -143,12 +163,12 @@ export const getProjectById = async (id: number) => {
 };
 
 export const createProject = async (project: Omit<Project, "id">) => {
-  const response = await apiClient.post<ApiProject>("/Projects", project);
+  const response = await apiClient.post<ApiProject>("/Projects", toProjectWriteDto(project));
   return mapProject(extractSingleProject(response.data));
 };
 
 export const updateProject = async (id: number, project: Partial<Project>) => {
-  const response = await apiClient.put<ApiProject>(`/Projects/${id}`, project);
+  const response = await apiClient.put<ApiProject>(`/Projects/${id}`, toProjectWriteDto(project));
   return mapProject(extractSingleProject(response.data));
 };
 
