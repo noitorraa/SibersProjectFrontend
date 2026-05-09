@@ -22,7 +22,7 @@ const mapEmployee = (employee: ApiEmployee): Employee => ({
 
 const extractEmployees = (payload: EmployeesResponse): ApiEmployee[] => {
   if (Array.isArray(payload)) return payload;
-  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? [];
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? (payload as any).$values ?? (payload as any).value ?? (payload as any).Value ?? [];
 };
 
 export const getEmployees = async () => {

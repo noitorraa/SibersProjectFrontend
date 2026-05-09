@@ -101,7 +101,7 @@ type ProjectsListResponse =
 const extractProjects = (payload: ProjectsListResponse): ApiProject[] => {
   if (Array.isArray(payload)) return payload;
 
-  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? [];
+  return payload.items ?? payload.Items ?? payload.data ?? payload.Data ?? payload.results ?? payload.Results ?? (payload as any).$values ?? (payload as any).value ?? (payload as any).Value ?? [];
 };
 
 
@@ -112,7 +112,7 @@ const extractSingleProject = (payload: unknown): ApiProject => {
     return source as ApiProject;
   }
 
-  return (source?.project ?? source?.Project ?? source?.item ?? source?.Item ?? source?.data ?? source?.Data ?? {}) as ApiProject;
+  return (source?.project ?? source?.Project ?? source?.item ?? source?.Item ?? source?.data ?? source?.Data ?? source?.value ?? source?.Value ?? {}) as ApiProject;
 };
 
 export const getProjects = async (params?: ProjectFilterParams) => {
