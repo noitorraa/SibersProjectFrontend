@@ -19,6 +19,7 @@ export interface Project {
   startDate: string;
   endDate: string;
   priority: number;
+  status?: string;
   projectManager: Employee;
   employees: Employee[];
   documents?: ProjectDocument[];
@@ -37,6 +38,7 @@ export interface ProjectFilterParams {
   endDateFrom?: string;
   endDateTo?: string;
   priority?: number;
+  status?: string;
   customerCompanyId?: number;
   executorCompanyId?: number;
   projectManagerId?: number;
