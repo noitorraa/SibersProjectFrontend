@@ -52,8 +52,18 @@ export const createEmployee = async (project: Omit<Employee, "id">) => {
 };
 
 export const updateEmployee = async (id: number, project: Partial<Employee>) => {
-  const response = await apiClient.put<ApiEmployee>(`/Employees/${id}`, project);
-  return mapEmployee(response.data);
+  const payload = { id, Id: id, ...project };
+  const response = await apiClient.put<ApiEmployee | null>(`/Employees/${id}`, payload);
+  if (response.data && Object.keys(response.data).length) {
+    return mapEmployee(response.data);
+  }
+  return {
+    id,
+    firstName: project.firstName ?? "",
+    lastName: project.lastName ?? "",
+    patronymic: project.patronymic ?? "",
+    email: project.email ?? "",
+  };
 };
 
 export const deleteEmployee = async (id: number) => {
