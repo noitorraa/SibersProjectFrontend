@@ -88,7 +88,6 @@
 import { computed, reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useProjectsStore } from "@/stores/projects";
-import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import ProjectCard from "@/components/projects/ProjectCard.vue";
 import ProjectWizard from "@/components/projects/ProjectWizard.vue";
@@ -96,15 +95,12 @@ import type { Company, Employee, ProjectFilterParams } from "@/types";
 
 const router = useRouter();
 const projectsStore = useProjectsStore();
-const companiesStore = useCompaniesStore();
 const employeesStore = useEmployeesStore();
 const openWizard = ref(false);
 
 const localFilters = reactive<ProjectFilterParams>({ sortDirection: "asc" });
 
 const companyOptions = computed<Company[]>(() => {
-  if (companiesStore.companies.length) return companiesStore.companies;
-
   const map = new Map<number, Company>();
   for (const project of projectsStore.projects) {
     if (project.customerCompany?.id) map.set(project.customerCompany.id, project.customerCompany);
@@ -155,7 +151,7 @@ const goToProject = (id: number) => router.push(`/projects/${id}`);
 
 onMounted(async () => {
   await projectsStore.fetchProjects();
-  await Promise.allSettled([companiesStore.fetchCompanies(), employeesStore.fetchEmployees()]);
+  await employeesStore.fetchEmployees();
 });
 </script>
 

@@ -110,7 +110,6 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProjectsStore } from "@/stores/projects";
-import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import { getProjectDocumentById } from "@/api/projects";
 import type { Employee, ProjectDocument } from "@/types";
@@ -119,7 +118,6 @@ import EmployeeAutocomplete from "@/components/common/EmployeeAutocomplete.vue";
 const route = useRoute();
 const router = useRouter();
 const projectsStore = useProjectsStore();
-const companiesStore = useCompaniesStore();
 const employeesStore = useEmployeesStore();
 
 const projectId = Number(route.params.id);
@@ -152,9 +150,6 @@ const form = reactive({
 const projectsAsFallback = computed(() => projectsStore.projects.find((p) => Number(p.id) === projectId));
 
 const companyOptions = computed(() => {
-  const fromStore = companiesStore.companies;
-  if (fromStore.length) return fromStore;
-
   const projects = projectsStore.projects;
   const map = new Map<number, { id: number; name: string }>();
   for (const project of projects) {
@@ -259,7 +254,6 @@ const saveProject = async () => {
   console.log("[ProjectDetail] loaded state", {
     currentProject: projectsStore.currentProject,
     projectsCount: projectsStore.projects.length,
-    companiesCount: companiesStore.companies.length,
     employeesCount: employeesStore.employees.length,
   });
   fillForm();
@@ -349,13 +343,11 @@ onMounted(async () => {
   await Promise.allSettled([
     projectsStore.fetchProjects(),
     projectsStore.fetchProjectById(projectId),
-    companiesStore.fetchCompanies(),
     employeesStore.fetchEmployees(),
   ]);
   console.log("[ProjectDetail] loaded state", {
     currentProject: projectsStore.currentProject,
     projectsCount: projectsStore.projects.length,
-    companiesCount: companiesStore.companies.length,
     employeesCount: employeesStore.employees.length,
   });
   fillForm();

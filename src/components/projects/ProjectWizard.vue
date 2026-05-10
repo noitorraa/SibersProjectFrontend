@@ -45,7 +45,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { useProjectsStore } from "@/stores/projects";
-import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import type { Employee } from "@/types";
 import EmployeeAutocomplete from "@/components/common/EmployeeAutocomplete.vue";
@@ -53,7 +52,6 @@ import EmployeeAutocomplete from "@/components/common/EmployeeAutocomplete.vue";
 const emit = defineEmits<{ (e: "close"): void; (e: "saved"): void }>();
 
 const projectsStore = useProjectsStore();
-const companiesStore = useCompaniesStore();
 const employeesStore = useEmployeesStore();
 const managerSearch = ref("");
 const managerSearchOptions = ref<Employee[]>([]);
@@ -70,8 +68,6 @@ const form = reactive({
 });
 
 const companyOptions = computed(() => {
-  if (companiesStore.companies.length) return companiesStore.companies;
-
   const map = new Map<number, { id: number; name: string }>();
   for (const project of projectsStore.projects) {
     if (project.customerCompany?.id) map.set(project.customerCompany.id, project.customerCompany);
@@ -117,7 +113,7 @@ const onManagerInput = (query: string) => {
 };
 
 onMounted(async () => {
-  await Promise.allSettled([companiesStore.fetchCompanies(), employeesStore.fetchEmployees()]);
+  await employeesStore.fetchEmployees();
 });
 </script>
 
