@@ -33,11 +33,14 @@
 
         <label>
           Руководитель
-          <select v-model.number="form.projectManagerId" required>
-            <option v-for="employee in managerOptions" :key="employee.id" :value="employee.id">
-              {{ employee.lastName }} {{ employee.firstName }}
-            </option>
-          </select>
+          <EmployeeAutocomplete
+            v-model="managerSearch"
+            :options="managerSearchOptions"
+            placeholder="Начните вводить имя, фамилию или email"
+            required
+            @search="onManagerInput"
+            @select="onManagerSelect"
+          />
         </label>
 
         <div class="actions">
@@ -60,12 +63,13 @@
 
         <label>
           Добавить сотрудника
-          <select v-model.number="selectedEmployeeId">
-            <option :value="0">Выберите сотрудника</option>
-            <option v-for="employee in availableEmployees" :key="employee.id" :value="employee.id">
-              {{ employee.lastName }} {{ employee.firstName }}
-            </option>
-          </select>
+          <EmployeeAutocomplete
+            v-model="employeeSearch"
+            :options="employeeSearchOptions"
+            placeholder="Начните вводить имя, фамилию или email"
+            @search="onEmployeeInput"
+            @select="onEmployeeSelect"
+          />
         </label>
         <button :disabled="!selectedEmployeeId" @click="addEmployee">Добавить</button>
       </div>
@@ -106,15 +110,14 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProjectsStore } from "@/stores/projects";
-import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import { getProjectDocumentById } from "@/api/projects";
-import type { ProjectDocument } from "@/types";
+import type { Employee, ProjectDocument } from "@/types";
+import EmployeeAutocomplete from "@/components/common/EmployeeAutocomplete.vue";
 
 const route = useRoute();
 const router = useRouter();
 const projectsStore = useProjectsStore();
-const companiesStore = useCompaniesStore();
 const employeesStore = useEmployeesStore();
 
 const projectId = Number(route.params.id);
@@ -127,6 +130,12 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedDocument = ref<ProjectDocument | null>(null);
 const documentsLoading = ref(false);
 const isDragOver = ref(false);
+const managerSearch = ref("");
+const managerSearchOptions = ref<Employee[]>([]);
+const employeeSearch = ref("");
+const employeeSearchOptions = ref<Employee[]>([]);
+let managerSearchTimer: ReturnType<typeof setTimeout> | null = null;
+let employeeSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const form = reactive({
   name: "",
@@ -141,9 +150,6 @@ const form = reactive({
 const projectsAsFallback = computed(() => projectsStore.projects.find((p) => Number(p.id) === projectId));
 
 const companyOptions = computed(() => {
-  const fromStore = companiesStore.companies;
-  if (fromStore.length) return fromStore;
-
   const projects = projectsStore.projects;
   const map = new Map<number, { id: number; name: string }>();
   for (const project of projects) {
@@ -185,14 +191,51 @@ const fillForm = () => {
   form.customerCompanyId = project.customerCompany?.id ?? 0;
   form.executorCompanyId = project.executorCompany?.id ?? 0;
   form.projectManagerId = project.projectManager?.id ?? 0;
+  if (project.projectManager) {
+    managerSearch.value = formatEmployee(project.projectManager);
+    managerSearchOptions.value = [project.projectManager];
+  }
 
   console.log("[ProjectDetail] fillForm output", { ...form });
 };
 
-const availableEmployees = computed(() => {
-  const assigned = new Set((projectsStore.currentProject?.employees ?? []).map((e) => e.id));
-  return employeesStore.employees.filter((e) => !assigned.has(e.id));
-});
+const formatEmployee = (employee: Employee) => `${employee.lastName} ${employee.firstName} (${employee.email})`;
+
+const onManagerSelect = (employee: Employee) => {
+  form.projectManagerId = employee.id;
+};
+
+const onManagerInput = (query: string) => {
+  form.projectManagerId = managerSearchOptions.value.find((e) => formatEmployee(e) === managerSearch.value)?.id ?? 0;
+
+  if (managerSearchTimer) clearTimeout(managerSearchTimer);
+  managerSearchTimer = setTimeout(async () => {
+    if (query.length < 2) {
+      managerSearchOptions.value = [];
+      return;
+    }
+    managerSearchOptions.value = await employeesStore.searchEmployees(query);
+  }, 300);
+};
+
+const onEmployeeSelect = (employee: Employee) => {
+  selectedEmployeeId.value = employee.id;
+};
+
+const onEmployeeInput = (query: string) => {
+  selectedEmployeeId.value = employeeSearchOptions.value.find((e) => formatEmployee(e) === employeeSearch.value)?.id ?? 0;
+
+  if (employeeSearchTimer) clearTimeout(employeeSearchTimer);
+  employeeSearchTimer = setTimeout(async () => {
+    if (query.length < 2) {
+      employeeSearchOptions.value = [];
+      return;
+    }
+    const found = await employeesStore.searchEmployees(query);
+    const assigned = new Set((projectsStore.currentProject?.employees ?? []).map((e) => e.id));
+    employeeSearchOptions.value = found.filter((e) => !assigned.has(e.id));
+  }, 300);
+};
 
 const saveProject = async () => {
   errorMessage.value = "";
@@ -211,7 +254,6 @@ const saveProject = async () => {
   console.log("[ProjectDetail] loaded state", {
     currentProject: projectsStore.currentProject,
     projectsCount: projectsStore.projects.length,
-    companiesCount: companiesStore.companies.length,
     employeesCount: employeesStore.employees.length,
   });
   fillForm();
@@ -233,6 +275,8 @@ const addEmployee = async () => {
   try {
     await projectsStore.addEmployee(projectId, selectedEmployeeId.value);
     selectedEmployeeId.value = 0;
+    employeeSearch.value = "";
+    employeeSearchOptions.value = [];
     message.value = "Сотрудник добавлен";
   } catch (error: unknown) {
     errorMessage.value = (error as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Не удалось добавить сотрудника";
@@ -299,13 +343,11 @@ onMounted(async () => {
   await Promise.allSettled([
     projectsStore.fetchProjects(),
     projectsStore.fetchProjectById(projectId),
-    companiesStore.fetchCompanies(),
     employeesStore.fetchEmployees(),
   ]);
   console.log("[ProjectDetail] loaded state", {
     currentProject: projectsStore.currentProject,
     projectsCount: projectsStore.projects.length,
-    companiesCount: companiesStore.companies.length,
     employeesCount: employeesStore.employees.length,
   });
   fillForm();
