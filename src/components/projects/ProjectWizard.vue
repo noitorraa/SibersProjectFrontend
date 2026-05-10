@@ -26,9 +26,21 @@
 
         <label>
           Руководитель
-          <select v-model.number="form.projectManagerId" required>
-            <option v-for="employee in employeesStore.employees" :key="employee.id" :value="employee.id">{{ employee.lastName }} {{ employee.firstName }}</option>
-          </select>
+          <input
+            v-model="managerSearch"
+            list="wizard-manager-options"
+            type="text"
+            placeholder="Начните вводить имя, фамилию или email"
+            required
+            @input="onManagerInput"
+          />
+          <datalist id="wizard-manager-options">
+            <option
+              v-for="employee in managerSearchOptions"
+              :key="employee.id"
+              :value="formatEmployee(employee)"
+            />
+          </datalist>
         </label>
 
         <button type="submit">Создать проект</button>
@@ -38,16 +50,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useProjectsStore } from "@/stores/projects";
 import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
+import type { Employee } from "@/types";
 
 const emit = defineEmits<{ (e: "close"): void; (e: "saved"): void }>();
 
 const projectsStore = useProjectsStore();
 const companiesStore = useCompaniesStore();
 const employeesStore = useEmployeesStore();
+const managerSearch = ref("");
+const managerSearchOptions = ref<Employee[]>([]);
+let managerSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const form = reactive({
   name: "",
@@ -78,12 +94,29 @@ const save = async () => {
     priority: form.priority,
     customerCompany: companyOptions.value.find((c) => c.id === form.customerCompanyId)!,
     executorCompany: companyOptions.value.find((c) => c.id === form.executorCompanyId)!,
-    projectManager: employeesStore.employees.find((e) => e.id === form.projectManagerId)!,
+    projectManager: managerSearchOptions.value.find((e) => e.id === form.projectManagerId)
+      ?? employeesStore.employees.find((e) => e.id === form.projectManagerId)!,
     employees: [],
   });
 
   emit("saved");
   emit("close");
+};
+
+const formatEmployee = (employee: Employee) => `${employee.lastName} ${employee.firstName} (${employee.email})`;
+
+const onManagerInput = () => {
+  const query = managerSearch.value.trim();
+  form.projectManagerId = managerSearchOptions.value.find((e) => formatEmployee(e) === managerSearch.value)?.id ?? 0;
+
+  if (managerSearchTimer) clearTimeout(managerSearchTimer);
+  managerSearchTimer = setTimeout(async () => {
+    if (query.length < 2) {
+      managerSearchOptions.value = [];
+      return;
+    }
+    managerSearchOptions.value = await employeesStore.searchEmployees(query);
+  }, 300);
 };
 
 onMounted(async () => {

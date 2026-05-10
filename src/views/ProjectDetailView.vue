@@ -33,11 +33,21 @@
 
         <label>
           Руководитель
-          <select v-model.number="form.projectManagerId" required>
-            <option v-for="employee in managerOptions" :key="employee.id" :value="employee.id">
-              {{ employee.lastName }} {{ employee.firstName }}
-            </option>
-          </select>
+          <input
+            v-model="managerSearch"
+            list="detail-manager-options"
+            type="text"
+            placeholder="Начните вводить имя, фамилию или email"
+            required
+            @input="onManagerInput"
+          />
+          <datalist id="detail-manager-options">
+            <option
+              v-for="employee in managerSearchOptions"
+              :key="employee.id"
+              :value="formatEmployee(employee)"
+            />
+          </datalist>
         </label>
 
         <div class="actions">
@@ -60,12 +70,20 @@
 
         <label>
           Добавить сотрудника
-          <select v-model.number="selectedEmployeeId">
-            <option :value="0">Выберите сотрудника</option>
-            <option v-for="employee in availableEmployees" :key="employee.id" :value="employee.id">
-              {{ employee.lastName }} {{ employee.firstName }}
-            </option>
-          </select>
+          <input
+            v-model="employeeSearch"
+            list="detail-employee-options"
+            type="text"
+            placeholder="Начните вводить имя, фамилию или email"
+            @input="onEmployeeInput"
+          />
+          <datalist id="detail-employee-options">
+            <option
+              v-for="employee in employeeSearchOptions"
+              :key="employee.id"
+              :value="formatEmployee(employee)"
+            />
+          </datalist>
         </label>
         <button :disabled="!selectedEmployeeId" @click="addEmployee">Добавить</button>
       </div>
@@ -109,7 +127,7 @@ import { useProjectsStore } from "@/stores/projects";
 import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import { getProjectDocumentById } from "@/api/projects";
-import type { ProjectDocument } from "@/types";
+import type { Employee, ProjectDocument } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -127,6 +145,12 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedDocument = ref<ProjectDocument | null>(null);
 const documentsLoading = ref(false);
 const isDragOver = ref(false);
+const managerSearch = ref("");
+const managerSearchOptions = ref<Employee[]>([]);
+const employeeSearch = ref("");
+const employeeSearchOptions = ref<Employee[]>([]);
+let managerSearchTimer: ReturnType<typeof setTimeout> | null = null;
+let employeeSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const form = reactive({
   name: "",
@@ -185,14 +209,45 @@ const fillForm = () => {
   form.customerCompanyId = project.customerCompany?.id ?? 0;
   form.executorCompanyId = project.executorCompany?.id ?? 0;
   form.projectManagerId = project.projectManager?.id ?? 0;
+  if (project.projectManager) {
+    managerSearch.value = formatEmployee(project.projectManager);
+    managerSearchOptions.value = [project.projectManager];
+  }
 
   console.log("[ProjectDetail] fillForm output", { ...form });
 };
 
-const availableEmployees = computed(() => {
-  const assigned = new Set((projectsStore.currentProject?.employees ?? []).map((e) => e.id));
-  return employeesStore.employees.filter((e) => !assigned.has(e.id));
-});
+const formatEmployee = (employee: Employee) => `${employee.lastName} ${employee.firstName} (${employee.email})`;
+
+const onManagerInput = () => {
+  const query = managerSearch.value.trim();
+  form.projectManagerId = managerSearchOptions.value.find((e) => formatEmployee(e) === managerSearch.value)?.id ?? 0;
+
+  if (managerSearchTimer) clearTimeout(managerSearchTimer);
+  managerSearchTimer = setTimeout(async () => {
+    if (query.length < 2) {
+      managerSearchOptions.value = [];
+      return;
+    }
+    managerSearchOptions.value = await employeesStore.searchEmployees(query);
+  }, 300);
+};
+
+const onEmployeeInput = () => {
+  const query = employeeSearch.value.trim();
+  selectedEmployeeId.value = employeeSearchOptions.value.find((e) => formatEmployee(e) === employeeSearch.value)?.id ?? 0;
+
+  if (employeeSearchTimer) clearTimeout(employeeSearchTimer);
+  employeeSearchTimer = setTimeout(async () => {
+    if (query.length < 2) {
+      employeeSearchOptions.value = [];
+      return;
+    }
+    const found = await employeesStore.searchEmployees(query);
+    const assigned = new Set((projectsStore.currentProject?.employees ?? []).map((e) => e.id));
+    employeeSearchOptions.value = found.filter((e) => !assigned.has(e.id));
+  }, 300);
+};
 
 const saveProject = async () => {
   errorMessage.value = "";
@@ -233,6 +288,8 @@ const addEmployee = async () => {
   try {
     await projectsStore.addEmployee(projectId, selectedEmployeeId.value);
     selectedEmployeeId.value = 0;
+    employeeSearch.value = "";
+    employeeSearchOptions.value = [];
     message.value = "Сотрудник добавлен";
   } catch (error: unknown) {
     errorMessage.value = (error as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Не удалось добавить сотрудника";
