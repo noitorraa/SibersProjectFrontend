@@ -5,7 +5,6 @@
       <nav>
         <RouterLink to="/projects">Проекты</RouterLink>
         <RouterLink to="/employees">Сотрудники</RouterLink>
-        <RouterLink to="/companies">Компании</RouterLink>
       </nav>
     </aside>
     <main class="content">
