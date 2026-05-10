@@ -29,7 +29,7 @@ export interface ProjectDocument {
   id: number;
   fileName: string;
   filePath: string;
-  uploadDate: string;
+  uploadedAt: string;
 }
 
 export interface ProjectFilterParams {

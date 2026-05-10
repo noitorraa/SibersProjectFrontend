@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Project, ProjectFilterParams } from "@/types";
+import type { Project, ProjectDocument, ProjectFilterParams } from "@/types";
 import * as projectApi from "@/api/projects";
 import * as employeesApi from "@/api/employees";
 
@@ -26,9 +26,20 @@ export const useProjectsStore = defineStore("projects", () => {
       if (currentProject.value && (!currentProject.value.employees || !currentProject.value.employees.length)) {
         currentProject.value.employees = await employeesApi.getEmployeesByProject(id);
       }
+      if (currentProject.value) {
+        currentProject.value.documents = await projectApi.getProjectDocuments(id);
+      }
     } finally {
       loading.value = false;
     }
+  };
+
+  const fetchProjectDocuments = async (projectId: number): Promise<ProjectDocument[]> => {
+    const documents = await projectApi.getProjectDocuments(projectId);
+    if (currentProject.value?.id === projectId) {
+      currentProject.value.documents = documents;
+    }
+    return documents;
   };
 
   const createNewProject = async (project: Omit<Project, "id">) => {
@@ -61,12 +72,12 @@ export const useProjectsStore = defineStore("projects", () => {
 
   const uploadDocument = async (projectId: number, file: File) => {
     await projectApi.uploadProjectDocument(projectId, file);
-    await fetchProjectById(projectId);
+    await fetchProjectDocuments(projectId);
   };
 
   const removeDocument = async (projectId: number, documentId: number) => {
     await projectApi.deleteProjectDocument(projectId, documentId);
-    await fetchProjectById(projectId);
+    await fetchProjectDocuments(projectId);
   };
 
   return {
@@ -76,6 +87,7 @@ export const useProjectsStore = defineStore("projects", () => {
     filters,
     fetchProjects,
     fetchProjectById,
+    fetchProjectDocuments,
     createNewProject,
     updateExistingProject,
     removeProject,

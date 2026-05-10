@@ -72,20 +72,31 @@
 
       <div v-else>
         <h3>Документы</h3>
-        <div class="dropzone" @dragover.prevent @drop.prevent="onDrop">
-          Перетащите файл сюда или выберите вручную
-          <input type="file" @change="onFileSelect" />
+        <div class="dropzone" :class="{ dragging: isDragOver }" @dragover.prevent="onDragOver" @dragleave.prevent="onDragLeave" @drop.prevent="onDrop">
+          <p>Перетащите файл сюда или выберите вручную</p>
+          <input ref="fileInputRef" type="file" @change="onFileSelect" />
         </div>
         <div class="actions">
           <span v-if="pendingFile">Выбран файл: {{ pendingFile.name }}</span>
           <button :disabled="!pendingFile" @click="saveDocument">Сохранить файл</button>
         </div>
+        <p v-if="documentsLoading">Загрузка документов...</p>
         <ul>
           <li v-for="doc in projectsStore.currentProject.documents || []" :key="doc.id">
-            {{ doc.fileName }}
+            <strong>{{ doc.fileName }}</strong>
+            <span class="doc-meta">Путь: {{ doc.filePath }}</span>
+            <span class="doc-meta">Загружен: {{ formatDate(doc.uploadedAt) }}</span>
+            <button @click="openDocumentInfo(doc.id)">Информация</button>
             <button @click="deleteDocument(doc.id)">Удалить</button>
           </li>
         </ul>
+        <div v-if="selectedDocument" class="document-info">
+          <h4>Информация о документе</h4>
+          <p>Id: {{ selectedDocument.id }}</p>
+          <p>Имя: {{ selectedDocument.fileName }}</p>
+          <p>Путь: {{ selectedDocument.filePath }}</p>
+          <p>Дата загрузки: {{ formatDate(selectedDocument.uploadedAt) }}</p>
+        </div>
       </div>
     </template>
   </div>
@@ -97,6 +108,8 @@ import { useRoute, useRouter } from "vue-router";
 import { useProjectsStore } from "@/stores/projects";
 import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
+import { getProjectDocumentById } from "@/api/projects";
+import type { ProjectDocument } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -110,6 +123,10 @@ const selectedEmployeeId = ref(0);
 const message = ref("");
 const errorMessage = ref("");
 const pendingFile = ref<File | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedDocument = ref<ProjectDocument | null>(null);
+const documentsLoading = ref(false);
+const isDragOver = ref(false);
 
 const form = reactive({
   name: "",
@@ -233,14 +250,30 @@ const uploadFile = async (file?: File | null) => {
 
 const saveDocument = async () => {
   if (!pendingFile.value) return;
+  errorMessage.value = "";
   await projectsStore.uploadDocument(projectId, pendingFile.value);
   pendingFile.value = null;
+  if (fileInputRef.value) fileInputRef.value.value = "";
   message.value = "Файл сохранён";
 };
 
 const deleteDocument = async (documentId: number) => {
+  errorMessage.value = "";
   await projectsStore.removeDocument(projectId, documentId);
+  if (selectedDocument.value?.id === documentId) selectedDocument.value = null;
   message.value = "Файл удалён";
+};
+
+const openDocumentInfo = async (documentId: number) => {
+  if (!projectsStore.currentProject?.id) return;
+  selectedDocument.value = await getProjectDocumentById(projectId, documentId);
+};
+
+const formatDate = (value: string) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("ru-RU");
 };
 
 const onFileSelect = async (event: Event) => {
@@ -249,7 +282,16 @@ const onFileSelect = async (event: Event) => {
 };
 
 const onDrop = async (event: DragEvent) => {
+  isDragOver.value = false;
   await uploadFile(event.dataTransfer?.files?.[0] ?? null);
+};
+
+const onDragOver = () => {
+  isDragOver.value = true;
+};
+
+const onDragLeave = () => {
+  isDragOver.value = false;
 };
 
 onMounted(async () => {
@@ -267,6 +309,9 @@ onMounted(async () => {
     employeesCount: employeesStore.employees.length,
   });
   fillForm();
+  documentsLoading.value = true;
+  await projectsStore.fetchProjectDocuments(projectId);
+  documentsLoading.value = false;
 });
 </script>
 
@@ -280,4 +325,7 @@ label { display: flex; flex-direction: column; gap: 0.25rem; }
 .success { grid-column: 1 / -1; color: #0a7a36; }
 .error { grid-column: 1 / -1; color: #c21d1d; }
 .dropzone { border: 1px dashed #999; padding: 1rem; margin-bottom: 1rem; }
+.dropzone.dragging { border-color: #1d70b8; background: #eef6ff; }
+.doc-meta { margin-left: 0.5rem; color: #555; }
+.document-info { margin-top: 1rem; border: 1px solid #ddd; padding: 0.75rem; border-radius: 8px; max-width: 480px; }
 </style>
