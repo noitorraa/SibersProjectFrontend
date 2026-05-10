@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import type { Company, Employee, Project, ProjectFilterParams } from "@/types";
+import type { Company, Employee, Project, ProjectDocument, ProjectFilterParams } from "@/types";
 
 type ApiCompany = Partial<Company> & {
   Id?: number;
@@ -52,6 +52,13 @@ type ApiProject = Partial<Project> & {
   Employees?: ApiEmployee[];
 };
 
+type ApiProjectDocument = Partial<ProjectDocument> & {
+  Id?: number;
+  FileName?: string;
+  FilePath?: string;
+  UploadedAt?: string;
+  UploadDate?: string;
+};
 
 type ProjectWriteDto = {
   name?: string;
@@ -109,7 +116,14 @@ const mapProject = (project: ApiProject): Project => ({
   ),
   employees: (project.employees ?? project.Employees ?? []).map((employee) => mapEmployee(employee)),
   status: project.status ?? project.Status,
-  documents: project.documents ?? project.Documents,
+  documents: (project.documents ?? project.Documents ?? []).map((document) => mapProjectDocument(document as ApiProjectDocument)),
+});
+
+const mapProjectDocument = (document: ApiProjectDocument): ProjectDocument => ({
+  id: Number(document.id ?? document.Id ?? 0),
+  fileName: document.fileName ?? document.FileName ?? "",
+  filePath: document.filePath ?? document.FilePath ?? "",
+  uploadedAt: document.uploadedAt ?? document.UploadedAt ?? document.UploadDate ?? "",
 });
 
 type ProjectsListEnvelope = {
@@ -195,12 +209,22 @@ export const removeEmployeeFromProject = async (projectId: number, employeeId: n
 export const uploadProjectDocument = async (projectId: number, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
-  const response = await apiClient.post(`/Projects/${projectId}/documents`, formData, {
+  const response = await apiClient.post<ApiProjectDocument>(`/Projects/${projectId}/documents`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return response.data;
+  return mapProjectDocument(response.data);
 };
 
 export const deleteProjectDocument = async (projectId: number, documentId: number) => {
   await apiClient.delete(`/Projects/${projectId}/documents/${documentId}`);
+};
+
+export const getProjectDocuments = async (projectId: number) => {
+  const response = await apiClient.get<ApiProjectDocument[]>(`/Projects/${projectId}/documents`);
+  return response.data.map(mapProjectDocument);
+};
+
+export const getProjectDocumentById = async (projectId: number, documentId: number) => {
+  const response = await apiClient.get<ApiProjectDocument>(`/Projects/${projectId}/documents/${documentId}`);
+  return mapProjectDocument(response.data);
 };
