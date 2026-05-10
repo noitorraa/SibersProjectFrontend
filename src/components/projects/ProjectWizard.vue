@@ -26,21 +26,14 @@
 
         <label>
           Руководитель
-          <input
+          <EmployeeAutocomplete
             v-model="managerSearch"
-            list="wizard-manager-options"
-            type="text"
+            :options="managerSearchOptions"
             placeholder="Начните вводить имя, фамилию или email"
             required
-            @input="onManagerInput"
+            @search="onManagerInput"
+            @select="onManagerSelect"
           />
-          <datalist id="wizard-manager-options">
-            <option
-              v-for="employee in managerSearchOptions"
-              :key="employee.id"
-              :value="formatEmployee(employee)"
-            />
-          </datalist>
         </label>
 
         <button type="submit">Создать проект</button>
@@ -55,6 +48,7 @@ import { useProjectsStore } from "@/stores/projects";
 import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import type { Employee } from "@/types";
+import EmployeeAutocomplete from "@/components/common/EmployeeAutocomplete.vue";
 
 const emit = defineEmits<{ (e: "close"): void; (e: "saved"): void }>();
 
@@ -105,8 +99,11 @@ const save = async () => {
 
 const formatEmployee = (employee: Employee) => `${employee.lastName} ${employee.firstName} (${employee.email})`;
 
-const onManagerInput = () => {
-  const query = managerSearch.value.trim();
+const onManagerSelect = (employee: Employee) => {
+  form.projectManagerId = employee.id;
+};
+
+const onManagerInput = (query: string) => {
   form.projectManagerId = managerSearchOptions.value.find((e) => formatEmployee(e) === managerSearch.value)?.id ?? 0;
 
   if (managerSearchTimer) clearTimeout(managerSearchTimer);

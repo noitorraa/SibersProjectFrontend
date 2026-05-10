@@ -33,21 +33,14 @@
 
         <label>
           Руководитель
-          <input
+          <EmployeeAutocomplete
             v-model="managerSearch"
-            list="detail-manager-options"
-            type="text"
+            :options="managerSearchOptions"
             placeholder="Начните вводить имя, фамилию или email"
             required
-            @input="onManagerInput"
+            @search="onManagerInput"
+            @select="onManagerSelect"
           />
-          <datalist id="detail-manager-options">
-            <option
-              v-for="employee in managerSearchOptions"
-              :key="employee.id"
-              :value="formatEmployee(employee)"
-            />
-          </datalist>
         </label>
 
         <div class="actions">
@@ -70,20 +63,13 @@
 
         <label>
           Добавить сотрудника
-          <input
+          <EmployeeAutocomplete
             v-model="employeeSearch"
-            list="detail-employee-options"
-            type="text"
+            :options="employeeSearchOptions"
             placeholder="Начните вводить имя, фамилию или email"
-            @input="onEmployeeInput"
+            @search="onEmployeeInput"
+            @select="onEmployeeSelect"
           />
-          <datalist id="detail-employee-options">
-            <option
-              v-for="employee in employeeSearchOptions"
-              :key="employee.id"
-              :value="formatEmployee(employee)"
-            />
-          </datalist>
         </label>
         <button :disabled="!selectedEmployeeId" @click="addEmployee">Добавить</button>
       </div>
@@ -128,6 +114,7 @@ import { useCompaniesStore } from "@/stores/companies";
 import { useEmployeesStore } from "@/stores/employees";
 import { getProjectDocumentById } from "@/api/projects";
 import type { Employee, ProjectDocument } from "@/types";
+import EmployeeAutocomplete from "@/components/common/EmployeeAutocomplete.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -219,8 +206,11 @@ const fillForm = () => {
 
 const formatEmployee = (employee: Employee) => `${employee.lastName} ${employee.firstName} (${employee.email})`;
 
-const onManagerInput = () => {
-  const query = managerSearch.value.trim();
+const onManagerSelect = (employee: Employee) => {
+  form.projectManagerId = employee.id;
+};
+
+const onManagerInput = (query: string) => {
   form.projectManagerId = managerSearchOptions.value.find((e) => formatEmployee(e) === managerSearch.value)?.id ?? 0;
 
   if (managerSearchTimer) clearTimeout(managerSearchTimer);
@@ -233,8 +223,11 @@ const onManagerInput = () => {
   }, 300);
 };
 
-const onEmployeeInput = () => {
-  const query = employeeSearch.value.trim();
+const onEmployeeSelect = (employee: Employee) => {
+  selectedEmployeeId.value = employee.id;
+};
+
+const onEmployeeInput = (query: string) => {
   selectedEmployeeId.value = employeeSearchOptions.value.find((e) => formatEmployee(e) === employeeSearch.value)?.id ?? 0;
 
   if (employeeSearchTimer) clearTimeout(employeeSearchTimer);
